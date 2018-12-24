@@ -13,28 +13,34 @@
 $PATH=Get-Location
 $ConfigFile="$PATH\ServersToTest.txt"
 $ErrorFile="$PATH\mailbody.txt"
+$LOGFILE="$PATH\RunConnectionTests.log"
 $TotalFails=0
-Clear-Content $ErrorFile
+copy MailHead.txt $ErrorFile
+rm $LOGFILE
 $RunDate=Get-Date
+Add-content $LOGFILE $RunDate
 
-
+Add-Content $LOGFILE "######################################################################"
+Add-Content $LOGFILE "Beginning HTTP tests"
+Add-Content $LOGFILE "######################################################################"
 
 Foreach ($ServerLine in Get-Content $ConfigFile | Where { $_ -CMatch "HTTP"})
 {
-
+	Add-Content $LOGFILE "######################################################################"
 	$pos = $ServerLine.IndexOf(" ")
 	$IPAddress = $ServerLine.Substring(0, $pos)
-	Invoke-Webrequest $IPAddress  2>&1 > $null
-
+	Add-Content $LOGFILE "Checking server $IPAddress via HTTP"
+	Invoke-Webrequest $IPAddress  
+	
 
 	$RC=$?
-	
+	Add-Content $LOGFILE "Return Code $RC encountered when testing $IPAddress via HTTP"
 	if ( $RC )
 	{
 	}
 	else
 	{
-		$ERRORSTRING = "Webserver at IP address $IPAddress is not responding to curl"
+		$ERRORSTRING = "Webserver at IP address $IPAddress is not responding to Invoke-Webrequest"
 		$TotalFails=$TotalFails+1
 		Add-Content $ErrorFile $ERRORSTRING
 		$SearchAddress=$IPAddress+" *HTTP"
@@ -53,25 +59,30 @@ Foreach ($ServerLine in Get-Content $ConfigFile | Where { $_ -CMatch "HTTP"})
 
 $SectionDivider="######################################"
 Add-Content $ErrorFile $SectionDivider
+Add-Content $LOGFILE "######################################################################"
+Add-Content $LOGFILE "Beginning PING tests"
+Add-Content $LOGFILE "######################################################################"
 
 
 Foreach ($ServerLine in Get-Content $ConfigFile | Where { $_ -CMatch "PING" })
 {
-
+	Add-Content $LOGFILE "######################################################################"
 	$pos = $ServerLine.IndexOf(" ")
 	$IPAddress = $ServerLine.Substring(0, $pos)
-	Test-Connection $IPAddress 2>&1 > $null
+	Add-Content $LOGFILE "Checking server $IPAddress via Test-Connection"
+
+	Test-Connection $IPAddress  
 
 
 	$RC=$?
-	
+	Add-Content $LOGFILE "Return Code $RC encountered when testing $IPAddress via Test-Connection"
 	if ( $RC )
 	{
 	}
 	else
 	{
 		$TotalFails=$TotalFails+1
-		$ERRORSTRING = "Machine at IP address $IPAddress is not responding to ping"
+		$ERRORSTRING = "Machine at IP address $IPAddress is not responding to Test-Connection"
 		Add-Content $ErrorFile $ERRORSTRING
 		# I'm using grep to get the full line with it's comment out of the config file
 		# I'm appending a space to the end of the search string so that a .1 address doesn't also get .100
