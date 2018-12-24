@@ -36,13 +36,10 @@ Foreach ($ServerLine in Get-Content $ConfigFile | Where { $_ -CMatch "HTTP"})
 	{
 		$ERRORSTRING = "Webserver at IP address $IPAddress is not responding to curl"
 		$TotalFails=$TotalFails+1
-#		Write-Output $ERRORSTRING
 		Add-Content $ErrorFile $ERRORSTRING
-		# I'm using grep to get the full line with it's comment out of the config file
-		# I'm appending a space to the end of the search string so that a .1 address doesn't also get .100
-		$SearchAddress=$IPAddress+" "
-		$grepResult=grep $SearchAddress $ConfigFile
-		Add-Content $ErrorFile $grepResult
+		$SearchAddress=$IPAddress+" *HTTP"
+		$SearchResult=select-string $SearchAddress $ConfigFile
+		Add-Content $ErrorFile $SearchResult
 	}
 		
 	
@@ -54,6 +51,8 @@ Foreach ($ServerLine in Get-Content $ConfigFile | Where { $_ -CMatch "HTTP"})
 # Use Test-Connection to determine if other machines are all up and responding                                             #
 ############################################################################################################################
 
+$SectionDivider="######################################"
+Add-Content $ErrorFile $SectionDivider
 
 
 Foreach ($ServerLine in Get-Content $ConfigFile | Where { $_ -CMatch "PING" })
@@ -76,10 +75,9 @@ Foreach ($ServerLine in Get-Content $ConfigFile | Where { $_ -CMatch "PING" })
 		Add-Content $ErrorFile $ERRORSTRING
 		# I'm using grep to get the full line with it's comment out of the config file
 		# I'm appending a space to the end of the search string so that a .1 address doesn't also get .100
-		$SearchAddress=$IPAddress+" "
-		$grepResult=grep $SearchAddress $ConfigFile
-		Add-Content $ErrorFile $grepResult
-	}
+		$SearchAddress=$IPAddress+" *PING"
+		$SearchResult=select-string $SearchAddress $ConfigFile
+		Add-Content $ErrorFile $SearchResult	}
 		
 	
 	
@@ -92,11 +90,12 @@ Foreach ($ServerLine in Get-Content $ConfigFile | Where { $_ -CMatch "PING" })
 if ( $TotalFails )
 {
 	$SubjectLine="ALERT $TotalFails errors testing RCOC systems at $RunDate"
-	$ToAddress = 'to-address@domain.tld'
-	$FromAddress = 'from-address@domail.tld'
+	$ToAddress = 'italerts@reynoldsburgchurch.org'
+	$FromAddress = 'rcocadmin@reynoldsburgchurch.org'
 	$SmtpServer = 'smtp.office365.com'
 	$SmtpPort = '587'
-	$ErrorFile='C:\inst\Monitor\mailbody.txt'
+	$ErrorFile="$PATH\mailbody.txt"
+	$CredFile="$PATH\mailcreds.txt"
 	$EmailBody=[IO.File]::ReadAllText($ErrorFile)
 	$mailparam = @{
 		To = $ToAddress
@@ -105,7 +104,7 @@ if ( $TotalFails )
 		Body = $EmailBody
 		SmtpServer = $SmtpServer
 		Port = $SmtpPort
-		Credential = Import-CliXml -Path 'C:\inst\Monitor\mailcreds.txt'
+		Credential = Import-CliXml -Path $CredFile
 }
 
 Send-MailMessage @mailparam -UseSsl
