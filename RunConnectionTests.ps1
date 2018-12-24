@@ -92,8 +92,8 @@ Foreach ($ServerLine in Get-Content $ConfigFile | Where { $_ -CMatch "PING" })
 if ( $TotalFails )
 {
 	$SubjectLine="ALERT $TotalFails errors testing RCOC systems at $RunDate"
-	$ToAddress = 'bill@br-mr.com'
-	$FromAddress = 'bill@br-mr.com'
+	$ToAddress = 'to-address@domain.tld'
+	$FromAddress = 'from-address@domail.tld'
 	$SmtpServer = 'smtp.office365.com'
 	$SmtpPort = '587'
 	$ErrorFile='C:\inst\Monitor\mailbody.txt'
