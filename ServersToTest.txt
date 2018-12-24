@@ -1,0 +1,6 @@
+# list of machines to test webserver via Invoke-Webrequest
+192.168.0.1   HTTP Router
+10.0.0.1      HTTP bogus to demonstrate fail
+# List of machines to test connection via Test-Connection
+192.168.0.1   PING Router
+10.0.0.1      PING bogus to demonstrate fail
